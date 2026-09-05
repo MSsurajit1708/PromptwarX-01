@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 export function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-border/60">
-      <div className="blueprint-grid absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black,transparent_75%)]" />
+      <div className="blueprint-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black,transparent_75%)]" />
       <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-28">
         <div className="flex flex-col items-start justify-center">
           <Badge variant="outline" className="mb-6 gap-1.5 rounded-full border-primary/30 bg-primary/10 py-1 font-mono text-primary">
