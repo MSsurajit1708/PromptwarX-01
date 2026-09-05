@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Blueprint, request, g
 from app.extensions.database import db
 from app.models.project import Project
@@ -11,7 +11,7 @@ task_bp = Blueprint('task', __name__, url_prefix='/api/v1')
 @task_bp.route('/projects/<project_id>/tasks', methods=['GET'])
 @jwt_required
 def get_tasks(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project or project.owner_id != g.current_user.id:
         return error_response("NOT_FOUND", "Project not found", 404)
     tasks = Task.query.filter_by(project_id=project.id).all()
@@ -20,7 +20,7 @@ def get_tasks(project_id):
 @task_bp.route('/projects/<project_id>/tasks', methods=['POST'])
 @jwt_required
 def create_task(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project or project.owner_id != g.current_user.id:
         return error_response("NOT_FOUND", "Project not found", 404)
     data = request.get_json() or {}
@@ -44,7 +44,7 @@ def create_task(project_id):
 @task_bp.route('/tasks/<task_id>/status', methods=['PATCH'])
 @jwt_required
 def update_task_status(task_id):
-    task = Task.query.get(task_id)
+    task = db.session.get(Task, task_id)
     if not task or task.project.owner_id != g.current_user.id:
         return error_response("NOT_FOUND", "Task not found", 404)
     data = request.get_json() or {}
@@ -54,7 +54,7 @@ def update_task_status(task_id):
 
     task.status = new_status
     if new_status == 'COMPLETED':
-        task.completed_at = datetime.utcnow()
+        task.completed_at = datetime.now(timezone.utc)
     else:
         task.completed_at = None
 

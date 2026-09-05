@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Blueprint, request, current_app, g
 import jwt
 from app.extensions.database import db
@@ -12,7 +12,7 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/v1/auth')
 def _generate_token(user_id):
     payload = {
         "user_id": user_id,
-        "exp": datetime.utcnow() + current_app.config["JWT_ACCESS_TOKEN_EXPIRES"]
+        "exp": datetime.now(timezone.utc) + current_app.config["JWT_ACCESS_TOKEN_EXPIRES"]
     }
     return jwt.encode(payload, current_app.config["JWT_SECRET_KEY"], algorithm="HS256")
 
@@ -58,7 +58,7 @@ def login():
     if not user or not user.check_password(password):
         return error_response("INVALID_CREDENTIALS", "Invalid email or password", 401)
 
-    user.last_login = datetime.utcnow()
+    user.last_login = datetime.now(timezone.utc)
     db.session.commit()
 
     token = _generate_token(user.id)

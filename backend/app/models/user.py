@@ -1,7 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions.database import db
+
+def utc_now():
+    return datetime.now(timezone.utc)
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -12,9 +15,9 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), nullable=False, default='student')
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    last_login = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=utc_now)
+    updated_at = db.Column(db.DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+    last_login = db.Column(db.DateTime(timezone=True), nullable=True)
 
     profile = db.relationship('Profile', backref='user', uselist=False, cascade="all, delete-orphan")
     projects = db.relationship('Project', backref='owner', cascade="all, delete-orphan")

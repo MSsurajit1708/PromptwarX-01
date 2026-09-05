@@ -10,7 +10,7 @@ saved_bp = Blueprint('saved', __name__, url_prefix='/api/v1/projects')
 @saved_bp.route('/<project_id>/save', methods=['POST'])
 @jwt_required
 def save_project(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project:
         return error_response("NOT_FOUND", "Project not found", 404)
 

@@ -11,7 +11,7 @@ mentor_bp = Blueprint('mentor', __name__, url_prefix='/api/v1/projects')
 @mentor_bp.route('/<project_id>/mentor/chat', methods=['POST'])
 @jwt_required
 def chat_with_mentor(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project or project.owner_id != g.current_user.id:
         return error_response("NOT_FOUND", "Project not found", 404)
 
@@ -20,15 +20,12 @@ def chat_with_mentor(project_id):
     if not user_msg:
         return error_response("VALIDATION_ERROR", "Message is required", 400)
 
-    # Save user message
     user_chat = ChatMessage(user_id=g.current_user.id, project_id=project.id, role='user', content=user_msg)
     db.session.add(user_chat)
 
-    # Fetch recent history (last 5 messages)
     history = ChatMessage.query.filter_by(project_id=project.id).order_by(ChatMessage.created_at.desc()).limit(5).all()
     history_dicts = [h.to_dict() for h in reversed(history)]
 
-    # Generate AI mentor response
     ai_reply = AIService.chat_mentor(project.title, user_msg, history_dicts)
     assistant_chat = ChatMessage(user_id=g.current_user.id, project_id=project.id, role='assistant', content=ai_reply)
     db.session.add(assistant_chat)
@@ -42,7 +39,7 @@ def chat_with_mentor(project_id):
 @mentor_bp.route('/<project_id>/mentor/history', methods=['GET'])
 @jwt_required
 def get_chat_history(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project or project.owner_id != g.current_user.id:
         return error_response("NOT_FOUND", "Project not found", 404)
     messages = ChatMessage.query.filter_by(project_id=project.id).order_by(ChatMessage.created_at.asc()).all()

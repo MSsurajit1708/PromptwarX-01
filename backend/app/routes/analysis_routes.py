@@ -11,7 +11,7 @@ analysis_bp = Blueprint('analysis', __name__, url_prefix='/api/v1/projects')
 @analysis_bp.route('/<project_id>/analyze', methods=['POST'])
 @jwt_required
 def analyze_project(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project or project.owner_id != g.current_user.id:
         return error_response("NOT_FOUND", "Project not found", 404)
 
@@ -34,7 +34,7 @@ def analyze_project(project_id):
 @analysis_bp.route('/<project_id>/originality-check', methods=['POST'])
 @jwt_required
 def check_originality(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project or project.owner_id != g.current_user.id:
         return error_response("NOT_FOUND", "Project not found", 404)
 

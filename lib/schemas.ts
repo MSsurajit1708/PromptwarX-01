@@ -1,6 +1,17 @@
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
 
-export const MODEL = 'anthropic/claude-sonnet-4.5'
+const apiKey =
+  process.env.AI_API_KEY ||
+  process.env.GEMINI_API_KEY ||
+  process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+  ''
+
+export const googleProvider = createGoogleGenerativeAI({
+  apiKey,
+})
+
+export const MODEL = googleProvider('gemini-1.5-flash')
 
 export const ideaSchema = z.object({
   title: z.string().describe('A short, memorable product name (1-3 words).'),

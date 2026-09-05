@@ -11,7 +11,7 @@ doc_bp = Blueprint('documentation', __name__, url_prefix='/api/v1/projects')
 @doc_bp.route('/<project_id>/documentation/generate', methods=['POST'])
 @jwt_required
 def generate_documentation(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project or project.owner_id != g.current_user.id:
         return error_response("NOT_FOUND", "Project not found", 404)
 
@@ -28,7 +28,7 @@ def generate_documentation(project_id):
 @doc_bp.route('/<project_id>/documentation', methods=['GET'])
 @jwt_required
 def get_documentation(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project or project.owner_id != g.current_user.id:
         return error_response("NOT_FOUND", "Project not found", 404)
     docs = Documentation.query.filter_by(project_id=project.id).all()

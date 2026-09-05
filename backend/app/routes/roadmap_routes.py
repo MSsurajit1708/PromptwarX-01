@@ -12,13 +12,12 @@ roadmap_bp = Blueprint('roadmap', __name__, url_prefix='/api/v1/projects')
 @roadmap_bp.route('/<project_id>/roadmap/generate', methods=['POST'])
 @jwt_required
 def generate_project_roadmap(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project or project.owner_id != g.current_user.id:
         return error_response("NOT_FOUND", "Project not found", 404)
 
     phases = AIService.generate_roadmap(project.title, project.description)
 
-    # Clear existing roadmaps & tasks
     Roadmap.query.filter_by(project_id=project.id).delete()
     Task.query.filter_by(project_id=project.id).delete()
 
@@ -33,7 +32,6 @@ def generate_project_roadmap(project_id):
         db.session.add(rm)
         db.session.flush()
 
-        # Add 2 default tasks per phase
         t1 = Task(project_id=project.id, roadmap_id=rm.id, title=f"{rm.phase_name} - Setup & Prep", priority="HIGH")
         t2 = Task(project_id=project.id, roadmap_id=rm.id, title=f"{rm.phase_name} - Implementation", priority="MEDIUM")
         db.session.add_all([t1, t2])
@@ -45,7 +43,7 @@ def generate_project_roadmap(project_id):
 @roadmap_bp.route('/<project_id>/roadmap', methods=['GET'])
 @jwt_required
 def get_project_roadmap(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project or project.owner_id != g.current_user.id:
         return error_response("NOT_FOUND", "Project not found", 404)
     roadmaps = Roadmap.query.filter_by(project_id=project.id).order_by(Roadmap.phase_order.asc()).all()

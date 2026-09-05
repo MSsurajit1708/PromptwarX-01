@@ -17,7 +17,6 @@ def generate_projects():
     profile = Profile.query.filter_by(user_id=g.current_user.id).first()
     profile_dict = profile.to_dict() if profile else {}
 
-    # Merge explicit form payload with saved profile
     merged_profile = {
         "skills": data.get("skills") or [s["name"] for s in profile_dict.get("skills", [])],
         "interests": data.get("interests") or [i["name"] for i in profile_dict.get("interests", [])],
@@ -36,10 +35,8 @@ def generate_projects():
         proj.update(scores)
         scored_projects.append(proj)
 
-    # Sort descending by overall_score
     scored_projects.sort(key=lambda x: x.get("overall_score", 0), reverse=True)
 
-    # Persist generation record
     gen_record = GeneratedProject(
         user_id=g.current_user.id,
         generation_request=merged_profile,
@@ -63,7 +60,7 @@ def get_user_projects():
 @project_bp.route('/<project_id>', methods=['GET'])
 @jwt_required
 def get_project_by_id(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project or project.owner_id != g.current_user.id:
         return error_response("NOT_FOUND", "Project not found or unauthorized", 404)
     return success_response(project.to_dict())
