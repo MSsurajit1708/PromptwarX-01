@@ -1,7 +1,8 @@
 'use client'
 
+// This file MUST be completely standalone - no imports from app providers,
+// no Tailwind classes, no context. Railway/Next.js 16 prerender requires isolation.
 export default function GlobalError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string }
@@ -9,13 +10,43 @@ export default function GlobalError({
 }) {
   return (
     <html lang="en">
-      <body className="bg-background font-sans antialiased">
-        <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">
-          <h2 className="text-2xl font-bold text-foreground">Something went wrong!</h2>
-          <p className="mt-2 text-muted-foreground">{error.message || 'An unexpected error occurred.'}</p>
+      <head>
+        <title>Something went wrong – ProjectMentor AI</title>
+      </head>
+      <body
+        style={{
+          margin: 0,
+          padding: 0,
+          backgroundColor: '#0b1220',
+          color: '#e2e8f0',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          display: 'flex',
+          minHeight: '100vh',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+        }}
+      >
+        <div style={{ padding: '2rem', maxWidth: '480px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }}>
+            Something went wrong
+          </h2>
+          <p style={{ color: '#94a3b8', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+            An unexpected error occurred while loading ProjectMentor AI. Please try again.
+          </p>
           <button
             onClick={() => reset()}
-            className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            style={{
+              backgroundColor: '#6366f1',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '0.5rem',
+              padding: '0.625rem 1.5rem',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
           >
             Try again
           </button>
