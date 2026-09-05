@@ -28,7 +28,7 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
       <body className="font-sans antialiased">
         <StoreProvider>{children}</StoreProvider>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {process.env.VERCEL && <Analytics />}
       </body>
     </html>
   )
