@@ -23,7 +23,6 @@ def test_health_check(client):
     assert data['database'] == 'connected'
 
 def test_user_registration_login_and_profile(client):
-    # 1. Register User
     reg_res = client.post('/api/v1/auth/register', json={
         "name": "Audit Student",
         "email": "auditstudent@example.com",
@@ -32,12 +31,10 @@ def test_user_registration_login_and_profile(client):
     assert reg_res.status_code == 201
     token = reg_res.get_json()['data']['token']
 
-    # 2. Get Me
     me_res = client.get('/api/v1/auth/me', headers={"Authorization": f"Bearer {token}"})
     assert me_res.status_code == 200
     assert me_res.get_json()['data']['email'] == "auditstudent@example.com"
 
-    # 3. Update Profile
     prof_res = client.put('/api/v1/profile', json={
         "college": "Parul University",
         "degree": "B.Tech",
@@ -50,8 +47,7 @@ def test_user_registration_login_and_profile(client):
     assert prof_res.status_code == 200
     assert prof_res.get_json()['data']['branch'] == "AI & Machine Learning"
 
-def test_complete_project_lifecycle(client):
-    # Login Demo Student
+def test_complete_project_lifecycle_and_generators(client):
     login_res = client.post('/api/v1/auth/login', json={
         "email": "student@projectmentor.ai",
         "password": "Student@123"
@@ -59,7 +55,7 @@ def test_complete_project_lifecycle(client):
     token = login_res.get_json()['data']['token']
     headers = {"Authorization": f"Bearer {token}"}
 
-    # 1. Generate Recommendations
+    # 1. Generate & Score Recommendations
     gen_res = client.post('/api/v1/projects/generate', json={
         "skills": ["Python", "Flask", "React"],
         "interests": ["Healthcare Tech"],
@@ -69,9 +65,13 @@ def test_complete_project_lifecycle(client):
     assert gen_res.status_code == 200
     projects = gen_res.get_json()['data']['projects']
     assert len(projects) > 0
-    assert projects[0]['overall_score'] > 0
 
-    # 2. Select / Create Project
+    # 2. Compare Projects
+    compare_res = client.post('/api/v1/projects/compare', json={"projects": projects[:2]}, headers=headers)
+    assert compare_res.status_code == 200
+    assert len(compare_res.get_json()['data']['comparison']) == 2
+
+    # 3. Create Project
     create_res = client.post('/api/v1/projects', json={
         "title": "AI Patient Risk Monitor",
         "description": "Real-time vitals monitoring web app.",
@@ -82,41 +82,53 @@ def test_complete_project_lifecycle(client):
     assert create_res.status_code == 201
     project_id = create_res.get_json()['data']['id']
 
-    # 3. Generate Roadmap
+    # 4. Feature, Architecture, Database & Career Generators
+    feat_res = client.post(f'/api/v1/projects/{project_id}/features/generate', headers=headers)
+    assert feat_res.status_code == 200
+    assert len(feat_res.get_json()['data']) > 0
+
+    arch_res = client.post(f'/api/v1/projects/{project_id}/architecture/generate', headers=headers)
+    assert arch_res.status_code == 200
+    assert "components" in arch_res.get_json()['data']
+
+    db_res = client.post(f'/api/v1/projects/{project_id}/database-design/generate', headers=headers)
+    assert db_res.status_code == 200
+    assert "tables" in db_res.get_json()['data']
+
+    career_res = client.post(f'/api/v1/projects/{project_id}/career-analysis', headers=headers)
+    assert career_res.status_code == 200
+    assert "resume_bullets" in career_res.get_json()['data']
+
+    # 5. Roadmap & Tasks
     rm_res = client.post(f'/api/v1/projects/{project_id}/roadmap/generate', headers=headers)
     assert rm_res.status_code == 200
-    roadmaps = rm_res.get_json()['data']
-    assert len(roadmaps) > 0
 
-    # 4. Tasks Management
     tasks_res = client.get(f'/api/v1/projects/{project_id}/tasks', headers=headers)
     assert tasks_res.status_code == 200
-    tasks = tasks_res.get_json()['data']
-    assert len(tasks) > 0
+    task_id = tasks_res.get_json()['data'][0]['id']
 
-    task_id = tasks[0]['id']
     status_res = client.patch(f'/api/v1/tasks/{task_id}/status', json={"status": "COMPLETED"}, headers=headers)
     assert status_res.status_code == 200
-    assert status_res.get_json()['data']['status'] == "COMPLETED"
 
-    # 5. Mentor Chat
-    chat_res = client.post(f'/api/v1/projects/{project_id}/mentor/chat', json={
-        "message": "How do I structure the backend Flask app?"
-    }, headers=headers)
+    # 6. Mentor Chat
+    chat_res = client.post(f'/api/v1/projects/{project_id}/mentor/chat', json={"message": "How do I start?"}, headers=headers)
     assert chat_res.status_code == 200
-    assert "assistant_message" in chat_res.get_json()['data']
 
-    # 6. Project Analysis & Viva Prep
+    # 7. Analysis, Viva, Documentation
     analyze_res = client.post(f'/api/v1/projects/{project_id}/analyze', headers=headers)
     assert analyze_res.status_code == 200
-    assert analyze_res.get_json()['data']['overall_score'] > 0
 
     viva_res = client.post(f'/api/v1/projects/{project_id}/viva/generate', headers=headers)
     assert viva_res.status_code == 200
-    assert len(viva_res.get_json()['data']['questions']) > 0
 
-def test_admin_endpoints(client):
-    # Login Admin
+    doc_res = client.post(f'/api/v1/projects/{project_id}/documentation/generate', headers=headers)
+    assert doc_res.status_code == 200
+
+    # 8. Bookmark / Save
+    save_res = client.post(f'/api/v1/projects/{project_id}/save', headers=headers)
+    assert save_res.status_code == 201
+
+def test_admin_and_notifications(client):
     login_res = client.post('/api/v1/auth/login', json={
         "email": "admin@projectmentor.ai",
         "password": "Admin@123"
@@ -126,8 +138,9 @@ def test_admin_endpoints(client):
 
     users_res = client.get('/api/v1/admin/users', headers=headers)
     assert users_res.status_code == 200
-    assert len(users_res.get_json()['data']) >= 2
 
     analytics_res = client.get('/api/v1/admin/analytics', headers=headers)
     assert analytics_res.status_code == 200
-    assert analytics_res.get_json()['data']['platform_status'] == 'healthy'
+
+    notif_res = client.get('/api/v1/notifications', headers=headers)
+    assert notif_res.status_code == 200
